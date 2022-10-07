@@ -60,6 +60,8 @@ procedure main(args)
                 *trimmed>1 & 
                 not ends_with(trimmed,"{") &
                 not ends_with(trimmed,"}") &
+                not ends_with(trimmed,"(") &
+                not ends_with(trimmed,",") &
                 not ends_with(trimmed,"do") &
                 not ends_with(trimmed,"then") &
                 not begins_with(trimmed,"local") &
