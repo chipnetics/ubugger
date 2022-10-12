@@ -37,9 +37,15 @@ procedure main(args)
         # Track the original line from the source code internally, so user can trace easier.
         orig_line := 1
         every debug_line := !debug_data do {
+            # Before deleting comments, check if this is a debug trigger comment
+            if find("#xxx",debug_line) then write(fout,";",global_flag_name,":=1;")
+
+            # Now safe to Delete comments
+            if start_comment := find("#",debug_line) then debug_line[start_comment:*debug_line+1]:="" 
+        
             trimmed := trim(debug_line," \t",0)  #trim from both sides
+
             if find("end",trimmed) == 1 && in_methproc==1 then in_methproc:=0
-            if find("#xxx",trimmed) then write(fout,";",global_flag_name,":=1;")
 
             # For each $include directive, see if it was one of the files being turned into a dbg file.
             # by looking at the command-line arguments.
@@ -56,6 +62,9 @@ procedure main(args)
                 next # nothing left to do so go to next line.
             }
 
+           
+            if *trimmed = 0 then next
+
             if in_methproc==1 & 
                 *trimmed>1 & 
                 not ends_with(trimmed,"{") &
@@ -67,7 +76,7 @@ procedure main(args)
                 not begins_with(trimmed,"local") &
                 not begins_with(trimmed,"#") &
                 not begins_with(trimmed,"static") then 
-            write(fout,trimmed,";if /",global_flag_name," then ",global_flag_name,":=0; if ",global_flag_name,"==1 then {write(\"\\n\",center(\"",curr_file,"\",117,\"=\"));write(\">> \",left(\"",replace(trimmed,"\"","\\\""),"\",113,\" \"),\"|\");every local_s := staticnames(debug_c_s) do write(\"S-\",\"",right(orig_line,5,"-"),"\",\"\\t\\t\",left(local_s,20,\"-\"),left(fullimage(variable(local_s)),80,\" \"),\"|\");every local_v := localnames(debug_c_l) do write(\"L-\",\"",right(orig_line,5,"-"),"\",\"\\t\\t\",left(local_v,20,\"-\"),left(fullimage(variable(local_v)),80,\" \"),\"|\");write(\"[S] Step, [C] Continue\");ch:= getch(); if ch==\"s\" then write(\"Stepped.\") else {write(\"Continued.\\n\");",global_flag_name,":=0;}}") else 
+            write(fout,trimmed,";if /",global_flag_name," then ",global_flag_name,":=0; if ",global_flag_name,"==1 then {write(\"\\n\",center(\"",curr_file,"\",125,\"=\"));write(\">> \",left(\"",replace(trimmed,"\"","\\\""),"\",121,\" \"),\"|\");every local_s := staticnames(debug_c_s) do write(\"S-\",\"",right(orig_line,5,"-"),"\",\"\\t\\t\",left(local_s,20,\"-\"),left(fullimage(variable(local_s)),80,\" \"),\"|\");every local_v := localnames(debug_c_l) do write(\"L-\",\"",right(orig_line,5,"-"),"\",\"\\t\\t\",if \\variable(local_v) then right(*(variable(local_v)),6,\"\") else right(0,6,\"\"),\"\\t\",left(local_v,20,\"-\"),left(fullimage(variable(local_v)),80,\" \"),\"|\");write(\"[S] Step, [C] Continue\");ch:= getch(); if ch==\"s\" then write(\"Stepped.\") else {write(\"Continued.\\n\");",global_flag_name,":=0;}}") else 
             write(fout,trimmed)
 
             if begins_with(trimmed,"method") | begins_with(trimmed,"procedure") then in_methproc:=1
